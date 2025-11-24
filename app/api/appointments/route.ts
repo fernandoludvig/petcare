@@ -24,14 +24,14 @@ export async function GET(request: NextRequest) {
     const appointments = await prisma.appointment.findMany({
       where,
       include: {
-        Pet: {
+        pet: {
           include: {
-            Client: true,
+            client: true,
           },
         },
-        Client: true,
-        Service: true,
-        User: true,
+        client: true,
+        service: true,
+        assignedTo: true,
       },
       orderBy: {
         startTime: "asc",
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     const pet = await prisma.pet.findUnique({
       where: { id: validatedData.petId },
-      include: { Client: true },
+      include: { client: true },
     });
 
     if (!pet || pet.organizationId !== organization.id) {
@@ -144,14 +144,14 @@ export async function POST(request: NextRequest) {
         notes: validatedData.notes,
       },
       include: {
-        Pet: {
+        pet: {
           include: {
-            Client: true,
+            client: true,
           },
         },
-        Client: true,
-        Service: true,
-        User: true,
+        client: true,
+        service: true,
+        assignedTo: true,
       },
     });
 

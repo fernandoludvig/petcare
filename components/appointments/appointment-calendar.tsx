@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 interface AppointmentCalendarProps {
   appointments: AppointmentWithRelations[];
   onAppointmentClick?: (appointment: AppointmentWithRelations) => void;
+  onSlotClick?: (date: Date, hour: number) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -27,6 +28,7 @@ const statusColors: Record<string, string> = {
 export function AppointmentCalendar({
   appointments,
   onAppointmentClick,
+  onSlotClick,
 }: AppointmentCalendarProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -139,10 +141,22 @@ export function AppointmentCalendar({
                 </div>
                 {weekDays.map((day) => {
                   const slotAppointments = getAppointmentsForSlot(day, hour);
+                  const slotDate = new Date(day);
+                  slotDate.setHours(hour, 0, 0, 0);
+                  
                   return (
                     <div
                       key={day.toISOString()}
-                      className="min-h-[60px] border-l p-1"
+                      className={cn(
+                        "min-h-[60px] border-l p-1",
+                        onSlotClick && "cursor-pointer hover:bg-accent/50 transition-colors"
+                      )}
+                      onClick={(e) => {
+                        if (slotAppointments.length === 0 && onSlotClick) {
+                          e.stopPropagation();
+                          onSlotClick(slotDate, hour);
+                        }
+                      }}
                     >
                       {slotAppointments.map((apt) => (
                         <div
@@ -151,7 +165,10 @@ export function AppointmentCalendar({
                             "mb-1 cursor-pointer rounded p-1 text-xs text-white",
                             statusColors[apt.status] || "bg-gray-500"
                           )}
-                          onClick={() => onAppointmentClick?.(apt)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAppointmentClick?.(apt);
+                          }}
                         >
                           <div className="font-medium">
                             {apt.pet?.name || "Pet não encontrado"}

@@ -17,10 +17,10 @@ export async function GET(
         organizationId: organization.id,
       },
       include: {
-        Client: true,
-        Appointment: {
+        client: true,
+        appointments: {
           include: {
-            Service: true,
+            service: true,
           },
           orderBy: {
             startTime: "desc",
@@ -74,7 +74,7 @@ export async function PATCH(
       where: { id },
       data: validatedData,
       include: {
-        Client: true,
+        client: true,
       },
     });
 

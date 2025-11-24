@@ -13,7 +13,7 @@ async function getFormData() {
       organizationId: organization.id,
     },
     include: {
-      Pet: true,
+      pets: true,
     },
     orderBy: {
       name: "asc",
@@ -42,7 +42,12 @@ async function getFormData() {
   return { clients, services, users };
 }
 
-export default async function NewAppointmentPage() {
+export default async function NewAppointmentPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ datetime?: string }>;
+}) {
+  const params = await searchParams;
   const formData = await getFormData();
 
   async function handleSubmit(data: any) {
@@ -50,6 +55,12 @@ export default async function NewAppointmentPage() {
     await createAppointment(data);
     redirect("/agendamentos");
   }
+
+  const defaultValues = params.datetime
+    ? {
+        startTime: params.datetime,
+      }
+    : undefined;
 
   return (
     <div className="space-y-6">
@@ -70,6 +81,7 @@ export default async function NewAppointmentPage() {
             services={formData.services}
             users={formData.users}
             onSubmit={handleSubmit}
+            defaultValues={defaultValues}
           />
         </CardContent>
       </Card>

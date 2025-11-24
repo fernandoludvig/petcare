@@ -25,7 +25,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface AppointmentFormProps {
-  clients: (Client & { Pet: Pet[] })[];
+  clients: (Client & { pets: Pet[] })[];
   services: Service[];
   users?: User[];
   onSubmit: (data: any) => Promise<void>;
@@ -57,7 +57,7 @@ export function AppointmentForm({
   const selectedServiceId = form.watch("serviceId");
 
   const selectedClient = clients.find((c) => c.id === selectedClientId);
-  const selectedPet = selectedClient?.Pet.find((p) => p.id === selectedPetId);
+  const selectedPet = selectedClient?.pets.find((p) => p.id === selectedPetId);
   const selectedService = services.find((s) => s.id === selectedServiceId);
 
   const handleSubmit = async (data: any) => {
@@ -125,7 +125,7 @@ export function AppointmentForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {selectedClient.Pet.map((pet) => (
+                    {selectedClient.pets.map((pet) => (
                       <SelectItem key={pet.id} value={pet.id}>
                         {pet.name} ({pet.size})
                       </SelectItem>
@@ -212,11 +212,13 @@ export function AppointmentForm({
                   {...field}
                   value={
                     field.value
-                      ? format(
-                          new Date(field.value),
-                          "yyyy-MM-dd'T'HH:mm",
-                          { locale: ptBR }
-                        )
+                      ? typeof field.value === "string"
+                        ? field.value
+                        : format(
+                            new Date(field.value),
+                            "yyyy-MM-dd'T'HH:mm",
+                            { locale: ptBR }
+                          )
                       : ""
                   }
                 />

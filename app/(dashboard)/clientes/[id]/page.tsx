@@ -24,11 +24,11 @@ export default async function ClientDetailPage({
       organizationId: organization.id,
     },
     include: {
-      Pet: true,
-      Appointment: {
+      pets: true,
+      appointments: {
         include: {
-          Pet: true,
-          Service: true,
+          pet: true,
+          service: true,
         },
         orderBy: {
           startTime: "desc",
@@ -115,13 +115,13 @@ export default async function ClientDetailPage({
             <CardTitle>Pets</CardTitle>
           </CardHeader>
           <CardContent>
-            {client.Pet.length === 0 ? (
+            {client.pets.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Nenhum pet cadastrado
               </p>
             ) : (
               <div className="space-y-2">
-                {client.Pet.map((pet) => (
+                {client.pets.map((pet) => (
                   <Link
                     key={pet.id}
                     href={`/pets/${pet.id}`}
@@ -144,20 +144,20 @@ export default async function ClientDetailPage({
           <CardTitle>Histórico de Agendamentos</CardTitle>
         </CardHeader>
         <CardContent>
-          {client.Appointment.length === 0 ? (
+          {client.appointments.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Nenhum agendamento registrado
             </p>
           ) : (
             <div className="space-y-4">
-              {client.Appointment.map((appointment) => (
+              {client.appointments.map((appointment) => (
                 <div
                   key={appointment.id}
                   className="flex items-center justify-between border-b pb-4 last:border-0"
                 >
                   <div>
                     <p className="font-medium">
-                      {appointment.Pet.name} - {appointment.Service.name}
+                      {appointment.pet.name} - {appointment.service.name}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {formatDate(

@@ -9,7 +9,6 @@ export async function createPet(data: any) {
   try {
     const organization = await getCurrentOrganization();
     
-    // Remover photoFile antes de validar (já foi processado no cliente)
     const { photoFile, ...dataToValidate } = data;
     const validatedData = petSchema.parse(dataToValidate);
 
@@ -35,6 +34,32 @@ export async function createPet(data: any) {
     return { success: true };
   } catch (error: any) {
     throw new Error(error.message || "Erro ao criar pet");
+  }
+}
+
+export async function deletePet(id: string) {
+  try {
+    const organization = await getCurrentOrganization();
+
+    const pet = await prisma.pet.findFirst({
+      where: {
+        id,
+        organizationId: organization.id,
+      },
+    });
+
+    if (!pet) {
+      throw new Error("Pet não encontrado");
+    }
+
+    await prisma.pet.delete({
+      where: { id },
+    });
+
+    revalidatePath("/pets");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Erro ao excluir pet");
   }
 }
 

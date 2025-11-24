@@ -56,14 +56,14 @@ async function getDashboardData() {
       },
     },
     include: {
-      Pet: {
+      pet: {
         include: {
-          Client: true,
+          client: true,
         },
       },
-      Client: true,
-      Service: true,
-      User: true,
+      client: true,
+      service: true,
+      assignedTo: true,
     },
   });
 
@@ -88,14 +88,14 @@ async function getDashboardData() {
       },
     },
     include: {
-      Pet: {
+      pet: {
         include: {
-          Client: true,
+          client: true,
         },
       },
-      Client: true,
-      Service: true,
-      User: true,
+      client: true,
+      service: true,
+      assignedTo: true,
     },
     orderBy: {
       startTime: "asc",
@@ -112,14 +112,14 @@ async function getDashboardData() {
       },
     },
     include: {
-      Pet: {
+      pet: {
         include: {
-          Client: true,
+          client: true,
         },
       },
-      Client: true,
-      Service: true,
-      User: true,
+      client: true,
+      service: true,
+      assignedTo: true,
     },
     orderBy: {
       startTime: "asc",
@@ -194,30 +194,30 @@ async function getDashboardData() {
     updatedAt: apt.updatedAt.toISOString(),
     reminderSentAt: apt.reminderSentAt ? apt.reminderSentAt.toISOString() : null,
     pet: {
-      ...apt.Pet,
-      birthDate: apt.Pet.birthDate ? apt.Pet.birthDate.toISOString() : null,
-      createdAt: apt.Pet.createdAt.toISOString(),
-      updatedAt: apt.Pet.updatedAt.toISOString(),
+      ...apt.pet,
+      birthDate: apt.pet.birthDate ? apt.pet.birthDate.toISOString() : null,
+      createdAt: apt.pet.createdAt.toISOString(),
+      updatedAt: apt.pet.updatedAt.toISOString(),
       client: {
-        ...apt.Pet.Client,
-        createdAt: apt.Pet.Client.createdAt.toISOString(),
-        updatedAt: apt.Pet.Client.updatedAt.toISOString(),
+        ...apt.pet.client,
+        createdAt: apt.pet.client.createdAt.toISOString(),
+        updatedAt: apt.pet.client.updatedAt.toISOString(),
       },
     },
     client: {
-      ...apt.Client,
-      createdAt: apt.Client.createdAt.toISOString(),
-      updatedAt: apt.Client.updatedAt.toISOString(),
+      ...apt.client,
+      createdAt: apt.client.createdAt.toISOString(),
+      updatedAt: apt.client.updatedAt.toISOString(),
     },
     service: {
-      ...apt.Service,
-      createdAt: apt.Service.createdAt.toISOString(),
-      updatedAt: apt.Service.updatedAt.toISOString(),
+      ...apt.service,
+      createdAt: apt.service.createdAt.toISOString(),
+      updatedAt: apt.service.updatedAt.toISOString(),
     },
-    assignedTo: apt.User ? {
-      ...apt.User,
-      createdAt: apt.User.createdAt.toISOString(),
-      updatedAt: apt.User.updatedAt.toISOString(),
+    assignedTo: apt.assignedTo ? {
+      ...apt.assignedTo,
+      createdAt: apt.assignedTo.createdAt.toISOString(),
+      updatedAt: apt.assignedTo.updatedAt.toISOString(),
     } : null,
   });
 

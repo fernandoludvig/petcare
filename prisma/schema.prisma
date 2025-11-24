@@ -7,35 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Appointment {
-  id             String            @id @default(cuid())
-  startTime      DateTime
-  endTime        DateTime
-  status         AppointmentStatus @default(SCHEDULED)
-  petId          String
-  clientId       String
-  serviceId      String
-  assignedToId   String?
-  organizationId String
-  price          Float
-  paid           Boolean           @default(false)
-  paymentMethod  PaymentMethod?
-  notes          String?
-  beforePhotoUrl String?
-  afterPhotoUrl  String?
-  reminderSent   Boolean           @default(false)
-  reminderSentAt DateTime?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  User           User?             @relation(fields: [assignedToId], references: [id])
-  Client         Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  Organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  Pet            Pet               @relation(fields: [petId], references: [id], onDelete: Cascade)
-  Service        Service           @relation(fields: [serviceId], references: [id])
+model Organization {
+  id            String        @id @default(cuid())
+  name          String
+  clerkId       String        @unique
+  email         String        @unique
+  phone         String?
+  address       String?
+  businessHours Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  appointments  Appointment[]
+  clients       Client[]
+  pets          Pet[]
+  services      Service[]
+  users         User[]
+}
 
-  @@index([clientId])
-  @@index([organizationId, startTime])
-  @@index([petId])
+model User {
+  id             String        @id @default(cuid())
+  clerkId        String        @unique
+  email          String        @unique
+  name           String
+  role           UserRole      @default(ADMIN)
+  avatarUrl      String?
+  organizationId String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  appointments   Appointment[]
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model Client {
@@ -49,29 +49,12 @@ model Client {
   organizationId String
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  Appointment    Appointment[]
-  Organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  Pet            Pet[]
+  appointments   Appointment[]
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pets           Pet[]
 
   @@unique([organizationId, phone])
   @@index([organizationId])
-}
-
-model Organization {
-  id            String        @id @default(cuid())
-  name          String
-  clerkId       String        @unique
-  email         String        @unique
-  phone         String?
-  address       String?
-  businessHours Json?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  Appointment   Appointment[]
-  Client        Client[]
-  Pet           Pet[]
-  Service       Service[]
-  User          User[]
 }
 
 model Pet {
@@ -91,12 +74,13 @@ model Pet {
   organizationId String
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  Appointment    Appointment[]
-  Client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  Organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+  client         Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([clientId])
   @@index([organizationId])
+  @@index([organizationId, name])
 }
 
 model Service {
@@ -117,24 +101,67 @@ model Service {
   organizationId String
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
-  Appointment    Appointment[]
-  Organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
 }
 
-model User {
-  id             String        @id @default(cuid())
-  clerkId        String        @unique
-  email          String        @unique
-  name           String
-  role           UserRole      @default(ADMIN)
-  avatarUrl      String?
+model Appointment {
+  id             String            @id @default(cuid())
+  startTime      DateTime
+  endTime        DateTime
+  status         AppointmentStatus @default(SCHEDULED)
+  petId          String
+  clientId       String
+  serviceId      String
+  assignedToId   String?
   organizationId String
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  Appointment    Appointment[]
-  Organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  price          Float
+  paid           Boolean           @default(false)
+  paymentMethod  PaymentMethod?
+  notes          String?
+  beforePhotoUrl String?
+  afterPhotoUrl  String?
+  reminderSent   Boolean           @default(false)
+  reminderSentAt DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  assignedTo     User?             @relation(fields: [assignedToId], references: [id])
+  client         Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pet            Pet               @relation(fields: [petId], references: [id], onDelete: Cascade)
+  service        Service           @relation(fields: [serviceId], references: [id])
+
+  @@index([organizationId, startTime])
+  @@index([petId])
+  @@index([clientId])
+}
+
+enum UserRole {
+  ADMIN
+  GROOMER
+  BATHER
+  ATTENDANT
+}
+
+enum Species {
+  DOG
+  CAT
+  OTHER
+}
+
+enum PetSize {
+  MINI
+  SMALL
+  MEDIUM
+  LARGE
+  GIANT
+}
+
+enum Gender {
+  MALE
+  FEMALE
 }
 
 enum AppointmentStatus {
@@ -146,36 +173,10 @@ enum AppointmentStatus {
   NO_SHOW
 }
 
-enum Gender {
-  MALE
-  FEMALE
-}
-
 enum PaymentMethod {
   CASH
   DEBIT_CARD
   CREDIT_CARD
   PIX
   VOUCHER
-}
-
-enum PetSize {
-  MINI
-  SMALL
-  MEDIUM
-  LARGE
-  GIANT
-}
-
-enum Species {
-  DOG
-  CAT
-  OTHER
-}
-
-enum UserRole {
-  ADMIN
-  GROOMER
-  BATHER
-  ATTENDANT
 }

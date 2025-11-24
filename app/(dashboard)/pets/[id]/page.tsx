@@ -43,10 +43,10 @@ export default async function PetDetailPage({
       organizationId: organization.id,
     },
     include: {
-      Client: true,
-      Appointment: {
+      client: true,
+      appointments: {
         include: {
-          Service: true,
+          service: true,
         },
         orderBy: {
           startTime: "desc",
@@ -97,7 +97,7 @@ export default async function PetDetailPage({
               </div>
               <div>
                 <label className="text-sm font-medium">Dono</label>
-                <p>{pet.Client.name}</p>
+                <p>{pet.client.name}</p>
               </div>
               <div>
                 <label className="text-sm font-medium">Espécie</label>
@@ -178,19 +178,19 @@ export default async function PetDetailPage({
           <CardTitle>Histórico de Agendamentos</CardTitle>
         </CardHeader>
         <CardContent>
-          {pet.Appointment.length === 0 ? (
+          {pet.appointments.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Nenhum agendamento registrado
             </p>
           ) : (
             <div className="space-y-4">
-              {pet.Appointment.map((appointment) => (
+              {pet.appointments.map((appointment) => (
                 <div
                   key={appointment.id}
                   className="flex items-center justify-between border-b pb-4 last:border-0"
                 >
                   <div>
-                    <p className="font-medium">{appointment.Service.name}</p>
+                    <p className="font-medium">{appointment.service.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {format(
                         new Date(appointment.startTime),

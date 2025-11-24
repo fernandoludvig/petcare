@@ -10,8 +10,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrganization } from "@/lib/auth";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { ServiceActions } from "@/components/services/service-actions";
 
 async function getServices() {
   const organization = await getCurrentOrganization();
@@ -40,10 +41,12 @@ export default async function ServicesPage() {
             Gerencie os serviços oferecidos
           </p>
         </div>
-        <Button disabled>
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Serviço
-        </Button>
+        <Link href="/servicos/novo">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Serviço
+          </Button>
+        </Link>
       </div>
 
       <div className="rounded-md border">
@@ -55,6 +58,7 @@ export default async function ServicesPage() {
               <TableHead>Preços por Porte</TableHead>
               <TableHead>Duração (min)</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -98,6 +102,9 @@ export default async function ServicesPage() {
                   ) : (
                     <Badge variant="outline">Inativo</Badge>
                   )}
+                </TableCell>
+                <TableCell>
+                  <ServiceActions serviceId={service.id} />
                 </TableCell>
               </TableRow>
             ))}
