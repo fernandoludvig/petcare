@@ -411,7 +411,7 @@ async function main() {
       serviceId: service.id,
       organizationId: organization.id,
       price: priceMap[pet.size] || 0,
-      status: i < 3 ? "CONFIRMED" : "SCHEDULED",
+      status: (i < 3 ? "CONFIRMED" : "SCHEDULED") as "CONFIRMED" | "SCHEDULED",
     });
   }
 
