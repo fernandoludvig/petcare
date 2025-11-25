@@ -7,22 +7,19 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhook(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware((auth, req) => {
   if (isPublicRoute(req)) {
-    return;
+    return NextResponse.next();
   }
 
-  try {
-    const authObj = await auth();
-    if (!authObj?.userId) {
-      const signInUrl = new URL("/sign-in", req.url);
-      return NextResponse.redirect(signInUrl);
-    }
-  } catch (error) {
-    console.error("Middleware authentication error:", error);
+  const { userId } = auth();
+
+  if (!userId) {
     const signInUrl = new URL("/sign-in", req.url);
     return NextResponse.redirect(signInUrl);
   }
+
+  return NextResponse.next();
 });
 
 export const config = {
