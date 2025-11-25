@@ -2,7 +2,7 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { appointmentSchema } from "@/lib/validations/appointment";
+import { appointmentSchema, updateAppointmentSchema } from "@/lib/validations/appointment";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Client, Pet, Service, User } from "@prisma/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Switch } from "@/components/ui/switch";
 
 interface AppointmentFormProps {
   clients: (Client & { pets: Pet[] })[];
@@ -30,6 +31,7 @@ interface AppointmentFormProps {
   users?: User[];
   onSubmit: (data: any) => Promise<void>;
   defaultValues?: any;
+  showStatusAndPayment?: boolean;
 }
 
 export function AppointmentForm({
@@ -38,9 +40,10 @@ export function AppointmentForm({
   users,
   onSubmit,
   defaultValues,
+  showStatusAndPayment = false,
 }: AppointmentFormProps) {
   const form = useForm({
-    resolver: zodResolver(appointmentSchema),
+    resolver: zodResolver(showStatusAndPayment ? updateAppointmentSchema : appointmentSchema),
     defaultValues: defaultValues || {
       petId: "",
       clientId: "",
@@ -49,6 +52,9 @@ export function AppointmentForm({
       assignedToId: "",
       notes: "",
       price: 0,
+      status: "SCHEDULED",
+      paid: false,
+      paymentMethod: "",
     },
   });
 
@@ -61,7 +67,6 @@ export function AppointmentForm({
   const selectedService = services.find((s) => s.id === selectedServiceId);
 
   const handleSubmit = async (data: any) => {
-    const startTime = new Date(data.startTime);
     const priceMap: Record<string, number> = {
       MINI: selectedService?.priceMini || 0,
       SMALL: selectedService?.priceSmall || 0,
@@ -72,8 +77,10 @@ export function AppointmentForm({
 
     await onSubmit({
       ...data,
-      startTime,
+      startTime: data.startTime instanceof Date ? data.startTime : new Date(data.startTime),
       price: priceMap[selectedPet?.size || "MEDIUM"] || data.price,
+      assignedToId: data.assignedToId === "__none__" || !data.assignedToId ? undefined : data.assignedToId,
+      paymentMethod: data.paymentMethod === "" || !data.paymentMethod ? undefined : data.paymentMethod,
     });
   };
 
@@ -234,17 +241,18 @@ export function AppointmentForm({
             name="assignedToId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Atribuir a</FormLabel>
+                <FormLabel>Colaborador</FormLabel>
                 <Select
-                  onValueChange={(value) => field.onChange(value || undefined)}
-                  value={field.value || undefined}
+                  onValueChange={(value) => field.onChange(value === "__none__" ? undefined : value)}
+                  value={field.value || "__none__"}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um profissional (opcional)" />
+                      <SelectValue placeholder="Selecione um colaborador (opcional)" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value="__none__">Nenhum</SelectItem>
                     {users.map((user) => (
                       <SelectItem key={user.id} value={user.id}>
                         {user.name}
@@ -256,6 +264,87 @@ export function AppointmentForm({
               </FormItem>
             )}
           />
+        )}
+
+        {showStatusAndPayment && (
+          <>
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || "SCHEDULED"}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="SCHEDULED">Agendado</SelectItem>
+                      <SelectItem value="CONFIRMED">Confirmado</SelectItem>
+                      <SelectItem value="IN_PROGRESS">Em Andamento</SelectItem>
+                      <SelectItem value="COMPLETED">Concluído</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelado</SelectItem>
+                      <SelectItem value="NO_SHOW">Não Compareceu</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paid"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Marcar como pago</FormLabel>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value || false}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {form.watch("paid") && (
+              <FormField
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Método de Pagamento</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o método de pagamento" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="CASH">Dinheiro</SelectItem>
+                        <SelectItem value="DEBIT_CARD">Cartão de Débito</SelectItem>
+                        <SelectItem value="CREDIT_CARD">Cartão de Crédito</SelectItem>
+                        <SelectItem value="PIX">PIX</SelectItem>
+                        <SelectItem value="VOUCHER">Vale</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </>
         )}
 
         <FormField

@@ -11,13 +11,20 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { deleteAppointment } from "@/app/actions/appointments";
+import { deleteAppointment, markAsCompleted, markAsPaid } from "@/app/actions/appointments";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, CheckCircle, DollarSign } from "lucide-react";
 import Link from "next/link";
 import { AppointmentWithRelations } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AppointmentDetailsDialogProps {
   appointment: AppointmentWithRelations | null;
@@ -57,7 +64,11 @@ export function AppointmentDetailsDialog({
   onOpenChange,
 }: AppointmentDetailsDialogProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
   const router = useRouter();
 
   if (!appointment) return null;
@@ -73,6 +84,37 @@ export function AppointmentDetailsDialog({
       alert(error.message || "Erro ao excluir agendamento");
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const handleMarkAsCompleted = async () => {
+    if (appointment.status === "COMPLETED") {
+      return;
+    }
+    
+    setIsCompleting(true);
+    try {
+      await markAsCompleted(appointment.id);
+      onOpenChange(false);
+      router.refresh();
+    } catch (error: any) {
+      alert(error.message || "Erro ao marcar agendamento como realizado");
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  const handleMarkAsPaid = async () => {
+    setIsPaying(true);
+    try {
+      await markAsPaid(appointment.id, paymentMethod || undefined);
+      setShowPaymentDialog(false);
+      setPaymentMethod("");
+      router.refresh();
+    } catch (error: any) {
+      alert(error.message || "Erro ao marcar agendamento como pago");
+    } finally {
+      setIsPaying(false);
     }
   };
 
@@ -185,7 +227,33 @@ export function AppointmentDetailsDialog({
             </div>
           </div>
 
-          <DialogFooter className="flex justify-between">
+          <DialogFooter className="flex justify-end gap-2">
+            <Link href={`/agendamentos/${appointment.id}/editar`}>
+              <Button variant="outline">
+                <Pencil className="mr-2 h-4 w-4" />
+                Editar
+              </Button>
+            </Link>
+            {appointment.status !== "COMPLETED" && (
+              <Button
+                onClick={handleMarkAsCompleted}
+                disabled={isCompleting}
+                variant="secondary"
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                {isCompleting ? "Marcando..." : "Realizado"}
+              </Button>
+            )}
+            {!appointment.paid && (
+              <Button
+                onClick={() => setShowPaymentDialog(true)}
+                disabled={isPaying}
+                variant="secondary"
+              >
+                <DollarSign className="mr-2 h-4 w-4" />
+                Marcar como Pago
+              </Button>
+            )}
             <Button
               variant="destructive"
               onClick={() => setShowDeleteDialog(true)}
@@ -193,17 +261,9 @@ export function AppointmentDetailsDialog({
               <Trash2 className="mr-2 h-4 w-4" />
               Excluir
             </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Fechar
-              </Button>
-              <Link href={`/agendamentos/${appointment.id}/editar`}>
-                <Button>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Editar
-                </Button>
-              </Link>
-            </div>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Fechar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -230,6 +290,58 @@ export function AppointmentDetailsDialog({
               disabled={isDeleting}
             >
               {isDeleting ? "Excluindo..." : "Excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Marcar como Pago</DialogTitle>
+            <DialogDescription>
+              Selecione o método de pagamento utilizado
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Método de Pagamento</label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o método de pagamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">Dinheiro</SelectItem>
+                  <SelectItem value="DEBIT_CARD">Cartão de Débito</SelectItem>
+                  <SelectItem value="CREDIT_CARD">Cartão de Crédito</SelectItem>
+                  <SelectItem value="PIX">PIX</SelectItem>
+                  <SelectItem value="VOUCHER">Vale</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">
+                Valor: <span className="font-medium">R$ {appointment.price?.toFixed(2) || "0.00"}</span>
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowPaymentDialog(false);
+                setPaymentMethod("");
+              }}
+              disabled={isPaying}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleMarkAsPaid}
+              disabled={isPaying || !paymentMethod}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isPaying ? "Processando..." : "Confirmar Pagamento"}
             </Button>
           </DialogFooter>
         </DialogContent>

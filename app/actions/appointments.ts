@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrganization } from "@/lib/auth";
-import { appointmentSchema } from "@/lib/validations/appointment";
+import { appointmentSchema, updateAppointmentSchema } from "@/lib/validations/appointment";
 import { revalidatePath } from "next/cache";
 
 export async function createAppointment(data: any) {
@@ -114,7 +114,7 @@ export async function updateAppointment(id: string, data: any) {
       throw new Error("Agendamento não encontrado");
     }
 
-    const validatedData = appointmentSchema.parse(data);
+    const validatedData = updateAppointmentSchema.parse(data);
 
     const pet = await prisma.pet.findUnique({
       where: { id: validatedData.petId },
@@ -193,13 +193,18 @@ export async function updateAppointment(id: string, data: any) {
         petId: validatedData.petId,
         clientId: validatedData.clientId,
         serviceId: validatedData.serviceId,
-        assignedToId: validatedData.assignedToId,
+        assignedToId: validatedData.assignedToId || null,
         price: validatedData.price || priceMap[pet.size] || 0,
         notes: validatedData.notes,
+        status: validatedData.status || appointment.status,
+        paid: validatedData.paid !== undefined ? validatedData.paid : appointment.paid,
+        paymentMethod: validatedData.paymentMethod || null,
       },
     });
 
     revalidatePath("/agendamentos");
+    revalidatePath("/agendamentos/historico");
+    revalidatePath("/");
     return { success: true };
   } catch (error: any) {
     throw new Error(error.message || "Erro ao atualizar agendamento");
@@ -226,9 +231,71 @@ export async function deleteAppointment(id: string) {
     });
 
     revalidatePath("/agendamentos");
+    revalidatePath("/");
     return { success: true };
   } catch (error: any) {
     throw new Error(error.message || "Erro ao excluir agendamento");
+  }
+}
+
+export async function markAsCompleted(id: string) {
+  try {
+    const organization = await getCurrentOrganization();
+
+    const appointment = await prisma.appointment.findFirst({
+      where: {
+        id,
+        organizationId: organization.id,
+      },
+    });
+
+    if (!appointment) {
+      throw new Error("Agendamento não encontrado");
+    }
+
+    await prisma.appointment.update({
+      where: { id },
+      data: {
+        status: "COMPLETED",
+      },
+    });
+
+    revalidatePath("/agendamentos");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Erro ao marcar agendamento como realizado");
+  }
+}
+
+export async function markAsPaid(id: string, paymentMethod?: string) {
+  try {
+    const organization = await getCurrentOrganization();
+
+    const appointment = await prisma.appointment.findFirst({
+      where: {
+        id,
+        organizationId: organization.id,
+      },
+    });
+
+    if (!appointment) {
+      throw new Error("Agendamento não encontrado");
+    }
+
+    await prisma.appointment.update({
+      where: { id },
+      data: {
+        paid: true,
+        paymentMethod: paymentMethod || undefined,
+      },
+    });
+
+    revalidatePath("/agendamentos");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    throw new Error(error.message || "Erro ao marcar agendamento como pago");
   }
 }
 

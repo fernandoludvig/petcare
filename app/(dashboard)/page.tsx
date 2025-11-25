@@ -160,6 +160,23 @@ async function getDashboardData() {
     }
   });
 
+  const monthStart = startOfDay(new Date(today.getFullYear(), today.getMonth(), 1));
+  const monthEnd = endOfDay(new Date(today.getFullYear(), today.getMonth() + 1, 0));
+
+  const monthRevenue = await prisma.appointment.aggregate({
+    where: {
+      organizationId: organization.id,
+      startTime: {
+        gte: monthStart,
+        lte: monthEnd,
+      },
+      paid: true,
+    },
+    _sum: {
+      price: true,
+    },
+  });
+
   const businessHours = (organization.businessHours as any) || {
     seg: "08:00-18:00",
     ter: "08:00-18:00",
@@ -228,6 +245,7 @@ async function getDashboardData() {
     todayRevenue,
     todayPets,
     occupancyRate,
+    monthRevenue: monthRevenue._sum.price || 0,
     upcomingAppointments: upcomingAppointments.map(serializeAppointment) as any,
     pendingAppointments: pendingAppointments.map(serializeAppointment) as any,
     revenueData: last7Days,
@@ -251,6 +269,7 @@ export default async function DashboardPage() {
         todayRevenue={data.todayRevenue}
         todayPets={data.todayPets}
         occupancyRate={data.occupancyRate}
+        monthRevenue={data.monthRevenue}
       />
 
       <div className="grid gap-6 md:grid-cols-2">

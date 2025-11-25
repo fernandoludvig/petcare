@@ -8,6 +8,7 @@ interface StatsCardsProps {
   todayRevenue: number;
   todayPets: number;
   occupancyRate: number;
+  monthRevenue: number;
 }
 
 export function StatsCards({
@@ -15,6 +16,7 @@ export function StatsCards({
   todayRevenue,
   todayPets,
   occupancyRate,
+  monthRevenue,
 }: StatsCardsProps) {
   const stats = [
     {
@@ -28,6 +30,12 @@ export function StatsCards({
       value: `R$ ${todayRevenue.toFixed(2)}`,
       icon: DollarSign,
       color: "text-secondary",
+    },
+    {
+      title: "Receita do Mês",
+      value: `R$ ${monthRevenue.toFixed(2)}`,
+      icon: DollarSign,
+      color: "text-green-600",
     },
     {
       title: "Pets Atendidos",
@@ -44,7 +52,7 @@ export function StatsCards({
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (

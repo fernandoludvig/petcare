@@ -13,10 +13,13 @@ export const dynamic = 'force-dynamic';
 
 export default async function EditAppointmentPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ returnTo?: string }>;
 }) {
   const { id } = await params;
+  const search = await searchParams;
   const organization = await getCurrentOrganization();
 
   const appointment = await prisma.appointment.findFirst({
@@ -28,6 +31,7 @@ export default async function EditAppointmentPage({
       pet: { include: { client: true } },
       client: { include: { pets: true } },
       service: true,
+      assignedTo: true,
     },
   });
 
@@ -68,8 +72,13 @@ export default async function EditAppointmentPage({
 
   async function handleSubmit(data: any) {
     "use server";
-    await updateAppointment(id, data);
-    redirect("/agendamentos");
+    try {
+      await updateAppointment(id, data);
+      const returnTo = search.returnTo || "/agendamentos";
+      redirect(returnTo);
+    } catch (error: any) {
+      throw error;
+    }
   }
 
   return (
@@ -98,6 +107,7 @@ export default async function EditAppointmentPage({
             services={services}
             users={users}
             onSubmit={handleSubmit}
+            showStatusAndPayment={true}
             defaultValues={{
               petId: appointment.petId,
               clientId: appointment.clientId,
@@ -106,6 +116,9 @@ export default async function EditAppointmentPage({
               assignedToId: appointment.assignedToId || "",
               notes: appointment.notes || "",
               price: appointment.price,
+              status: appointment.status,
+              paid: appointment.paid,
+              paymentMethod: appointment.paymentMethod || "",
             }}
           />
         </CardContent>

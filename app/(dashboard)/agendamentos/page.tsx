@@ -19,6 +19,9 @@ async function AppointmentsContent() {
       where: {
         organizationId: organization.id,
         startTime: { gte: weekStart, lte: weekEnd },
+        status: {
+          notIn: ["COMPLETED", "CANCELLED"],
+        },
       },
       include: {
         pet: { include: { client: true } },

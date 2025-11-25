@@ -7,13 +7,15 @@ import {
   PawPrint, 
   Users, 
   Settings,
-  Scissors
+  Scissors,
+  History
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/agendamentos", label: "Agendamentos", icon: Calendar },
+  { href: "/agendamentos/historico", label: "Histórico", icon: History },
   { href: "/pets", label: "Pets", icon: PawPrint },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/servicos", label: "Serviços", icon: Scissors },
