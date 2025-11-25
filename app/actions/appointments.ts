@@ -283,11 +283,16 @@ export async function markAsPaid(id: string, paymentMethod?: string) {
       throw new Error("Agendamento não encontrado");
     }
 
+    const validPaymentMethods = ["CASH", "DEBIT_CARD", "CREDIT_CARD", "PIX", "VOUCHER"] as const;
+    const validPaymentMethod = paymentMethod && validPaymentMethods.includes(paymentMethod as any)
+      ? (paymentMethod as "CASH" | "DEBIT_CARD" | "CREDIT_CARD" | "PIX" | "VOUCHER")
+      : null;
+
     await prisma.appointment.update({
       where: { id },
       data: {
         paid: true,
-        paymentMethod: paymentMethod || undefined,
+        paymentMethod: validPaymentMethod,
       },
     });
 
