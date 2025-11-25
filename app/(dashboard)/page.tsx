@@ -9,6 +9,8 @@ import { format, startOfDay, endOfDay, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppointmentWithRelations } from "@/types";
 
+export const dynamic = 'force-dynamic';
+
 type SerializedAppointment = Omit<AppointmentWithRelations, 'startTime' | 'endTime' | 'createdAt' | 'updatedAt' | 'reminderSentAt'> & {
   startTime: string;
   endTime: string;

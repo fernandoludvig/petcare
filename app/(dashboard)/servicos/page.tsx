@@ -14,6 +14,8 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { ServiceActions } from "@/components/services/service-actions";
 
+export const dynamic = 'force-dynamic';
+
 async function getServices() {
   const organization = await getCurrentOrganization();
 

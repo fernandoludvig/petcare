@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrganization } from "@/lib/auth";
 import { createPet } from "@/app/actions/pets";
 
+export const dynamic = 'force-dynamic';
+
 async function getClients() {
   const organization = await getCurrentOrganization();
 

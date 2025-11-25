@@ -9,6 +9,8 @@ import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { formatPhone } from "@/lib/utils";
 
+export const dynamic = 'force-dynamic';
+
 async function ClientsContent({ search }: { search?: string }) {
   try {
     const organization = await getCurrentOrganization();

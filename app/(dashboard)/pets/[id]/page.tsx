@@ -10,6 +10,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 const speciesLabels: Record<string, string> = {
   DOG: "Cachorro",
   CAT: "Gato",

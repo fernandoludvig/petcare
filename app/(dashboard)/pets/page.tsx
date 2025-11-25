@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { PetCard } from "@/components/pets/pet-card";
 
+export const dynamic = 'force-dynamic';
+
 async function PetsContent({ search }: { search?: string }) {
   try {
     const organization = await getCurrentOrganization();

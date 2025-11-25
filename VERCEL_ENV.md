@@ -21,3 +21,4 @@ Configure as seguintes variáveis de ambiente no painel do Vercel:
 3. Adicione todas as variáveis acima
 4. Faça um novo deploy
 
+

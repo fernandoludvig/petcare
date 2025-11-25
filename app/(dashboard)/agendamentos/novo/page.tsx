@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentOrganization } from "@/lib/auth";
 import { createAppointment } from "@/app/actions/appointments";
 
+export const dynamic = 'force-dynamic';
+
 async function getFormData() {
   const organization = await getCurrentOrganization();
 

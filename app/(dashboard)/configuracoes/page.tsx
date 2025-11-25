@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { getCurrentOrganization } from "@/lib/auth";
 
+export const dynamic = 'force-dynamic';
+
 async function getOrganizationData() {
   const organization = await getCurrentOrganization();
 

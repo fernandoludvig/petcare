@@ -9,6 +9,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 
+export const dynamic = 'force-dynamic';
+
 export default async function EditAppointmentPage({
   params,
 }: {
@@ -111,4 +113,5 @@ export default async function EditAppointmentPage({
     </div>
   );
 }
+
 

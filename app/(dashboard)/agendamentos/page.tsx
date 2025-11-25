@@ -7,6 +7,8 @@ import { startOfWeek, endOfWeek } from "date-fns";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 async function AppointmentsContent() {
   try {
     const organization = await getCurrentOrganization();
