@@ -69,9 +69,25 @@ export async function PATCH(
 
     const validatedData = updateAppointmentSchema.parse(body);
 
+    const validPaymentMethods = ["CASH", "DEBIT_CARD", "CREDIT_CARD", "PIX", "VOUCHER"] as const;
+    const paymentMethod = validatedData.paymentMethod && validPaymentMethods.includes(validatedData.paymentMethod as any)
+      ? (validatedData.paymentMethod as "CASH" | "DEBIT_CARD" | "CREDIT_CARD" | "PIX" | "VOUCHER")
+      : null;
+
+    const updateData: any = {
+      ...validatedData,
+      paymentMethod,
+    };
+
+    if (validatedData.startTime) {
+      updateData.startTime = validatedData.startTime instanceof Date 
+        ? validatedData.startTime 
+        : new Date(validatedData.startTime);
+    }
+
     const updatedAppointment = await prisma.appointment.update({
       where: { id },
-      data: validatedData,
+      data: updateData,
       include: {
         pet: {
           include: {

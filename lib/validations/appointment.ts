@@ -22,7 +22,7 @@ export const appointmentSchema = z.object({
 export const updateAppointmentSchema = appointmentSchema.extend({
   status: z.enum(["SCHEDULED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "NO_SHOW"]).optional(),
   paid: z.boolean().optional(),
-  paymentMethod: z.enum(["CASH", "DEBIT_CARD", "CREDIT_CARD", "PIX", "VOUCHER"]).optional().or(z.literal("")),
+  paymentMethod: z.enum(["CASH", "DEBIT_CARD", "CREDIT_CARD", "PIX", "VOUCHER"]).optional().or(z.literal("").transform(() => undefined)),
 });
 
 export type AppointmentFormData = z.infer<typeof appointmentSchema>;
