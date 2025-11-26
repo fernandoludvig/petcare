@@ -7,8 +7,13 @@ import { revalidatePath } from "next/cache";
 
 export async function createUser(data: any) {
   try {
+    console.log("createUser called with data:", JSON.stringify(data, null, 2));
+    
     const organization = await getCurrentOrganization();
+    console.log("Organization:", organization?.id);
+    
     const currentUser = await getCurrentUser();
+    console.log("Current user:", currentUser?.id, currentUser?.role);
 
     if (!currentUser || currentUser.role !== "ADMIN") {
       throw new Error("Apenas administradores podem criar usuários");
@@ -50,6 +55,7 @@ export async function createUser(data: any) {
     }
 
     const redirectUrl = `${APP_URL}${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}`;
+    console.log("Redirect URL:", redirectUrl);
 
     const invitationData = {
       email_address: validatedData.email,
@@ -60,6 +66,8 @@ export async function createUser(data: any) {
       },
       redirect_url: redirectUrl,
     };
+    
+    console.log("Invitation data:", JSON.stringify(invitationData, null, 2));
 
     let response;
     try {
@@ -106,7 +114,10 @@ export async function createUser(data: any) {
     let invitation;
     try {
       invitation = await response.json();
+      console.log("Invitation response:", JSON.stringify(invitation, null, 2));
+      
       if (!invitation || !invitation.id) {
+        console.error("Invalid invitation response:", invitation);
         throw new Error("Resposta inválida do Clerk");
       }
     } catch (error: any) {
@@ -114,34 +125,54 @@ export async function createUser(data: any) {
       throw new Error("Erro ao processar resposta do Clerk");
     }
 
-    await prisma.user.create({
-      data: {
-        clerkId: `invitation_${invitation.id}`,
-        email: validatedData.email,
-        name: validatedData.name,
-        role: validatedData.role,
-        organizationId: organization.id,
-      },
-    });
+    try {
+      await prisma.user.create({
+        data: {
+          clerkId: `invitation_${invitation.id}`,
+          email: validatedData.email,
+          name: validatedData.name,
+          role: validatedData.role,
+          organizationId: organization.id,
+        },
+      });
+      console.log("User created successfully in database");
+    } catch (dbError: any) {
+      console.error("Error creating user in database:", dbError);
+      if (dbError.code === "P2002") {
+        throw new Error("Já existe um usuário com este email");
+      }
+      throw new Error("Erro ao salvar usuário no banco de dados");
+    }
 
     revalidatePath("/usuarios");
     revalidatePath("/usuarios/novo");
     return { success: true };
   } catch (error: any) {
-    console.error("Error creating user:", error);
+    console.error("Error creating user - Full error:", {
+      message: error.message,
+      name: error.name,
+      code: error.code,
+      stack: error.stack,
+      errors: error.errors,
+    });
     
     // Se for um erro de validação do Zod, retornar mensagem mais clara
     if (error.name === "ZodError") {
       const firstError = error.errors?.[0];
-      throw new Error(firstError?.message || "Dados inválidos");
+      const errorMessage = firstError?.message || "Dados inválidos";
+      console.error("Zod validation error:", errorMessage);
+      throw new Error(errorMessage);
     }
     
     // Se for um erro do Prisma, retornar mensagem mais clara
     if (error.code === "P2002") {
+      console.error("Prisma unique constraint error");
       throw new Error("Já existe um usuário com este email");
     }
     
-    throw new Error(error.message || "Erro ao criar usuário");
+    const errorMessage = error.message || "Erro ao criar usuário";
+    console.error("Final error message:", errorMessage);
+    throw new Error(errorMessage);
   }
 }
 

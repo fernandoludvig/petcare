@@ -48,16 +48,22 @@ export function UserForm({ onSubmit, defaultValues }: UserFormProps) {
     setIsSubmitting(true);
     setError(null);
     try {
+      console.log("Form submitting with data:", data);
       await onSubmit(data);
       // Se chegou aqui, o redirect foi bem-sucedido
       // Não resetar o estado pois o redirect vai acontecer
     } catch (err: any) {
+      console.error("Form submission error:", err);
+      
       // NEXT_REDIRECT é um erro esperado quando redirect() é chamado
       if (err.message?.includes("NEXT_REDIRECT") || err.digest === "NEXT_REDIRECT") {
         // Redirect está funcionando, não fazer nada
         return;
       }
-      setError(err.message || "Erro ao salvar usuário");
+      
+      const errorMessage = err.message || err.toString() || "Erro ao salvar usuário";
+      console.error("Error message:", errorMessage);
+      setError(errorMessage);
       setIsSubmitting(false);
     }
   };
