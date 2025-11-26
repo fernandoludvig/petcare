@@ -16,8 +16,12 @@ export default async function NewUserPage() {
 
   async function handleSubmit(data: any) {
     "use server";
-    await createUser(data);
-    redirect("/usuarios");
+    try {
+      await createUser(data);
+      redirect("/usuarios");
+    } catch (error: any) {
+      throw error;
+    }
   }
 
   return (

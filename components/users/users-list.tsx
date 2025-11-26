@@ -9,10 +9,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { User } from "@prisma/client";
+import { Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { UserActions } from "@/components/users/user-actions";
 
 interface UsersListProps {
   users: User[];
+  currentUserId?: string;
 }
 
 const roleLabels: Record<string, string> = {
@@ -29,7 +34,7 @@ const roleColors: Record<string, string> = {
   ATTENDANT: "bg-gray-500",
 };
 
-export function UsersList({ users }: UsersListProps) {
+export function UsersList({ users, currentUserId }: UsersListProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -39,12 +44,13 @@ export function UsersList({ users }: UsersListProps) {
             <TableHead>Email</TableHead>
             <TableHead>Perfil</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="text-center py-12">
+              <TableCell colSpan={5} className="text-center py-12">
                 <p className="text-muted-foreground">Nenhum usuário encontrado</p>
               </TableCell>
             </TableRow>
@@ -62,6 +68,9 @@ export function UsersList({ users }: UsersListProps) {
                   <Badge variant="outline" className="bg-green-100 text-green-800">
                     Ativo
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  <UserActions userId={user.id} currentUserId={currentUserId} />
                 </TableCell>
               </TableRow>
             ))

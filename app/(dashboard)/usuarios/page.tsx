@@ -27,7 +27,7 @@ async function UsersContent() {
       },
     });
 
-    return <UsersList users={users} />;
+    return <UsersList users={users} currentUserId={currentUser.id} />;
   } catch (error: any) {
     console.error("Error loading users:", error);
     return <div className="text-center py-12 text-red-600">Erro: {error.message}</div>;

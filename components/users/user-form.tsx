@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { userSchema } from "@/lib/validations/user";
@@ -23,21 +24,46 @@ import { Input } from "@/components/ui/input";
 
 interface UserFormProps {
   onSubmit: (data: any) => Promise<void>;
+  defaultValues?: {
+    name?: string;
+    email?: string;
+    role?: string;
+  };
 }
 
-export function UserForm({ onSubmit }: UserFormProps) {
+export function UserForm({ onSubmit, defaultValues }: UserFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const form = useForm({
     resolver: zodResolver(userSchema),
-    defaultValues: {
+    defaultValues: defaultValues || {
       name: "",
       email: "",
       role: "ATTENDANT",
     },
   });
 
+  const handleSubmit = async (data: any) => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await onSubmit(data);
+    } catch (err: any) {
+      setError(err.message || "Erro ao salvar usuário");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+        {error && (
+          <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive">
+            {error}
+          </div>
+        )}
         <FormField
           control={form.control}
           name="name"
@@ -96,8 +122,8 @@ export function UserForm({ onSubmit }: UserFormProps) {
           </p>
         </div>
 
-        <Button type="submit" className="w-full">
-          Criar Usuário e Enviar Convite
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Processando..." : defaultValues ? "Salvar Alterações" : "Criar Usuário e Enviar Convite"}
         </Button>
       </form>
     </Form>
