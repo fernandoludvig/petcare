@@ -14,7 +14,16 @@ export async function createUser(data: any) {
       throw new Error("Apenas administradores podem criar usuários");
     }
 
-    const validatedData = userSchema.parse(data);
+    let validatedData;
+    try {
+      validatedData = userSchema.parse(data);
+    } catch (validationError: any) {
+      if (validationError.errors && validationError.errors.length > 0) {
+        const firstError = validationError.errors[0];
+        throw new Error(firstError.message || "Dados inválidos");
+      }
+      throw new Error("Dados inválidos");
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email: validatedData.email },
@@ -52,36 +61,55 @@ export async function createUser(data: any) {
       redirect_url: redirectUrl,
     };
 
-    const response = await fetch("https://api.clerk.com/v1/invitations", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${CLERK_SECRET_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(invitationData),
-    });
+    let response;
+    try {
+      response = await fetch("https://api.clerk.com/v1/invitations", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${CLERK_SECRET_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(invitationData),
+      });
+    } catch (fetchError: any) {
+      console.error("Error fetching Clerk API:", fetchError);
+      throw new Error("Erro de conexão com o Clerk. Verifique sua conexão e tente novamente.");
+    }
 
     if (!response.ok) {
-      const errorText = await response.text();
+      let errorText = "";
+      try {
+        errorText = await response.text();
+      } catch {
+        errorText = "Erro desconhecido";
+      }
+      
       let errorMessage = "Erro ao criar convite no Clerk";
       try {
         const errorData = JSON.parse(errorText);
         errorMessage = errorData.errors?.[0]?.message || errorData.message || errorMessage;
       } catch {
-        errorMessage = errorText || errorMessage;
+        if (errorText) {
+          errorMessage = errorText.length > 200 ? "Erro ao criar convite no Clerk" : errorText;
+        }
       }
+      
       console.error("Clerk API Error:", {
         status: response.status,
         statusText: response.statusText,
         error: errorMessage,
       });
+      
       throw new Error(errorMessage);
     }
 
     let invitation;
     try {
       invitation = await response.json();
-    } catch (error) {
+      if (!invitation || !invitation.id) {
+        throw new Error("Resposta inválida do Clerk");
+      }
+    } catch (error: any) {
       console.error("Error parsing invitation response:", error);
       throw new Error("Erro ao processar resposta do Clerk");
     }
@@ -97,9 +125,22 @@ export async function createUser(data: any) {
     });
 
     revalidatePath("/usuarios");
+    revalidatePath("/usuarios/novo");
     return { success: true };
   } catch (error: any) {
     console.error("Error creating user:", error);
+    
+    // Se for um erro de validação do Zod, retornar mensagem mais clara
+    if (error.name === "ZodError") {
+      const firstError = error.errors?.[0];
+      throw new Error(firstError?.message || "Dados inválidos");
+    }
+    
+    // Se for um erro do Prisma, retornar mensagem mais clara
+    if (error.code === "P2002") {
+      throw new Error("Já existe um usuário com este email");
+    }
+    
     throw new Error(error.message || "Erro ao criar usuário");
   }
 }

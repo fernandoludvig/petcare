@@ -49,9 +49,15 @@ export function UserForm({ onSubmit, defaultValues }: UserFormProps) {
     setError(null);
     try {
       await onSubmit(data);
+      // Se chegou aqui, o redirect foi bem-sucedido
+      // Não resetar o estado pois o redirect vai acontecer
     } catch (err: any) {
+      // NEXT_REDIRECT é um erro esperado quando redirect() é chamado
+      if (err.message?.includes("NEXT_REDIRECT") || err.digest === "NEXT_REDIRECT") {
+        // Redirect está funcionando, não fazer nada
+        return;
+      }
       setError(err.message || "Erro ao salvar usuário");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -98,7 +104,10 @@ export function UserForm({ onSubmit, defaultValues }: UserFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Perfil</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value || "ATTENDANT"}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o perfil" />
