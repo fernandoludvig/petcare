@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   const eventType = evt.type;
 
   if (eventType === "user.created" || eventType === "user.updated") {
-    const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+    const { id, email_addresses, first_name, last_name, image_url, public_metadata } = evt.data;
 
     const email = email_addresses[0]?.email_address;
 
@@ -52,48 +52,67 @@ export async function POST(req: Request) {
       return new Response("Email não encontrado", { status: 400 });
     }
 
-    let organization = await prisma.organization.findUnique({
-      where: { clerkId: id },
-    });
+    const metadata = public_metadata as any;
+    const organizationId = metadata?.organizationId;
+    const role = metadata?.role || "ATTENDANT";
+    const nameFromMetadata = metadata?.name;
 
-    if (!organization) {
-      organization = await prisma.organization.create({
-        data: {
-          name: first_name && last_name
-            ? `${first_name} ${last_name}`
-            : email,
-          clerkId: id,
-          email,
-        },
+    let organization;
+
+    if (organizationId) {
+      organization = await prisma.organization.findUnique({
+        where: { id: organizationId },
       });
     } else {
-      organization = await prisma.organization.update({
-        where: { id: organization.id },
-        data: {
-          name: first_name && last_name
-            ? `${first_name} ${last_name}`
-            : email,
-          email,
-        },
+      organization = await prisma.organization.findUnique({
+        where: { clerkId: id },
       });
+
+      if (!organization) {
+        organization = await prisma.organization.create({
+          data: {
+            name: first_name && last_name
+              ? `${first_name} ${last_name}`
+              : email,
+            clerkId: id,
+            email,
+          },
+        });
+      } else {
+        organization = await prisma.organization.update({
+          where: { id: organization.id },
+          data: {
+            name: first_name && last_name
+              ? `${first_name} ${last_name}`
+              : email,
+            email,
+          },
+        });
+      }
     }
+
+    if (!organization) {
+      return new Response("Organização não encontrada", { status: 400 });
+    }
+
+    const userName = nameFromMetadata || (first_name && last_name
+      ? `${first_name} ${last_name}`
+      : email);
 
     const user = await prisma.user.upsert({
       where: { clerkId: id },
       update: {
         email,
-        name: first_name && last_name
-          ? `${first_name} ${last_name}`
-          : email,
+        name: userName,
         avatarUrl: image_url,
+        role: role as any,
       },
       create: {
         clerkId: id,
         email,
-        name: first_name && last_name
-          ? `${first_name} ${last_name}`
-          : email,
+        name: userName,
         avatarUrl: image_url,
+        role: role as any,
         organizationId: organization.id,
       },
     });

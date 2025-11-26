@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { HistoryList } from "@/components/appointments/history-list";
 import { prisma } from "@/lib/prisma";
-import { getCurrentOrganization } from "@/lib/auth";
+import { getCurrentOrganization, getCurrentUser } from "@/lib/auth";
+import { notFound } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 
@@ -118,6 +119,12 @@ export default async function HistoryPage({
     endDate?: string;
   }>;
 }) {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser || currentUser.role !== "ADMIN") {
+    notFound();
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -131,4 +138,5 @@ export default async function HistoryPage({
     </div>
   );
 }
+
 

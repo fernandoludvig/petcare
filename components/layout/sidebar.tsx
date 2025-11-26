@@ -8,23 +8,29 @@ import {
   Users, 
   Settings,
   Scissors,
-  History
+  History,
+  UserPlus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/agendamentos", label: "Agendamentos", icon: Calendar },
-  { href: "/agendamentos/historico", label: "Histórico", icon: History },
-  { href: "/pets", label: "Pets", icon: PawPrint },
-  { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/servicos", label: "Serviços", icon: Scissors },
-  { href: "/configuracoes", label: "Configurações", icon: Settings },
-];
+interface SidebarProps {
+  userRole: string | null;
+}
 
-export function Sidebar() {
+export function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+
+  const navItems = [
+    { href: "/", label: "Dashboard", icon: LayoutDashboard, requiresAdmin: true },
+    { href: "/agendamentos", label: "Agendamentos", icon: Calendar, requiresAdmin: false },
+    { href: "/agendamentos/historico", label: "Histórico", icon: History, requiresAdmin: true },
+    { href: "/pets", label: "Pets", icon: PawPrint, requiresAdmin: false },
+    { href: "/clientes", label: "Clientes", icon: Users, requiresAdmin: false },
+    { href: "/servicos", label: "Serviços", icon: Scissors, requiresAdmin: false },
+    { href: "/usuarios", label: "Usuários", icon: UserPlus, requiresAdmin: true },
+    { href: "/configuracoes", label: "Configurações", icon: Settings, requiresAdmin: false },
+  ].filter((item) => !item.requiresAdmin || userRole === "ADMIN");
 
   const handleNavigation = (href: string, e: React.MouseEvent) => {
     e.preventDefault();

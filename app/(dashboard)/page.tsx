@@ -4,10 +4,11 @@ import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { RecentAppointments } from "@/components/dashboard/recent-appointments";
 import { UpcomingAppointments } from "@/components/dashboard/upcoming-appointments";
 import { prisma } from "@/lib/prisma";
-import { getCurrentOrganization } from "@/lib/auth";
+import { getCurrentOrganization, getCurrentUser } from "@/lib/auth";
 import { format, startOfDay, endOfDay, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AppointmentWithRelations } from "@/types";
+import { notFound } from "next/navigation";
 
 export const dynamic = 'force-dynamic';
 
@@ -253,6 +254,12 @@ async function getDashboardData() {
 }
 
 export default async function DashboardPage() {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser || currentUser.role !== "ADMIN") {
+    notFound();
+  }
+
   const data = await getDashboardData();
 
   return (
