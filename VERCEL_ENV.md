@@ -9,6 +9,7 @@ Configure as seguintes variáveis de ambiente no painel do Vercel:
 - `NEXT_PUBLIC_CLERK_SIGN_UP_URL` - `/sign-up`
 - `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL` - `/`
 - `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL` - `/`
+- `NEXT_PUBLIC_APP_URL` - URL completa da aplicação (ex: https://seu-dominio.com) - usado para redirecionamento em convites
 - `WEBHOOK_SECRET` - Secret do webhook do Clerk (opcional, mas recomendado)
 
 ## Database
