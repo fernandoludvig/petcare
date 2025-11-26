@@ -146,7 +146,7 @@ export async function createUser(data: any) {
 
     revalidatePath("/usuarios");
     revalidatePath("/usuarios/novo");
-    return { success: true };
+    return { success: true, error: null };
   } catch (error: any) {
     console.error("Error creating user - Full error:", {
       message: error.message,
@@ -156,23 +156,26 @@ export async function createUser(data: any) {
       errors: error.errors,
     });
     
+    let errorMessage = "Erro ao criar usuário";
+    
     // Se for um erro de validação do Zod, retornar mensagem mais clara
     if (error.name === "ZodError") {
       const firstError = error.errors?.[0];
-      const errorMessage = firstError?.message || "Dados inválidos";
+      errorMessage = firstError?.message || "Dados inválidos";
       console.error("Zod validation error:", errorMessage);
-      throw new Error(errorMessage);
     }
-    
     // Se for um erro do Prisma, retornar mensagem mais clara
-    if (error.code === "P2002") {
+    else if (error.code === "P2002") {
       console.error("Prisma unique constraint error");
-      throw new Error("Já existe um usuário com este email");
+      errorMessage = "Já existe um usuário com este email";
+    }
+    // Outros erros
+    else if (error.message) {
+      errorMessage = error.message;
     }
     
-    const errorMessage = error.message || "Erro ao criar usuário";
     console.error("Final error message:", errorMessage);
-    throw new Error(errorMessage);
+    return { success: false, error: errorMessage };
   }
 }
 
