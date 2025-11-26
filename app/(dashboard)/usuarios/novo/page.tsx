@@ -60,24 +60,3 @@ export default async function NewUserPage() {
   }
 }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Novo Usuário</h1>
-        <p className="text-muted-foreground">
-          Crie um novo usuário e envie o convite por email
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Dados do Usuário</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <UserForm onSubmit={handleSubmit} />
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
