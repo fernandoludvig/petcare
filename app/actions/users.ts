@@ -9,20 +9,39 @@ export async function createUser(data: any) {
   try {
     console.log("createUser called with data:", JSON.stringify(data, null, 2));
     
-    const organization = await getCurrentOrganization();
-    console.log("Organization:", organization?.id);
-    
     const currentUser = await getCurrentUser();
     console.log("Current user:", currentUser?.id, currentUser?.role);
 
-    if (!currentUser || currentUser.role !== "ADMIN") {
+    if (!currentUser) {
+      console.error("No current user found");
+      throw new Error("Usuário não autenticado");
+    }
+
+    if (currentUser.role !== "ADMIN") {
+      console.error("User is not admin:", currentUser.role);
       throw new Error("Apenas administradores podem criar usuários");
+    }
+
+    let organization;
+    try {
+      organization = await getCurrentOrganization();
+      console.log("Organization:", organization?.id);
+    } catch (orgError: any) {
+      console.error("Error getting organization:", orgError);
+      throw new Error("Erro ao obter organização. Por favor, tente novamente.");
+    }
+
+    if (!organization || !organization.id) {
+      console.error("No organization found or invalid organization");
+      throw new Error("Organização não encontrada. Por favor, faça login novamente.");
     }
 
     let validatedData;
     try {
       validatedData = userSchema.parse(data);
+      console.log("Validated data:", validatedData);
     } catch (validationError: any) {
+      console.error("Validation error:", validationError);
       if (validationError.errors && validationError.errors.length > 0) {
         const firstError = validationError.errors[0];
         throw new Error(firstError.message || "Dados inválidos");
@@ -51,7 +70,8 @@ export async function createUser(data: any) {
     }
 
     if (!CLERK_SECRET_KEY) {
-      throw new Error("CLERK_SECRET_KEY não configurado");
+      console.error("CLERK_SECRET_KEY not configured");
+      throw new Error("Configuração do sistema incompleta. Entre em contato com o suporte.");
     }
 
     const redirectUrl = `${APP_URL}${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}`;
@@ -81,7 +101,7 @@ export async function createUser(data: any) {
       });
     } catch (fetchError: any) {
       console.error("Error fetching Clerk API:", fetchError);
-      throw new Error("Erro de conexão com o Clerk. Verifique sua conexão e tente novamente.");
+      throw new Error("Erro de conexão com o serviço de autenticação. Verifique sua conexão e tente novamente.");
     }
 
     if (!response.ok) {
@@ -92,13 +112,13 @@ export async function createUser(data: any) {
         errorText = "Erro desconhecido";
       }
       
-      let errorMessage = "Erro ao criar convite no Clerk";
+      let errorMessage = "Erro ao criar convite no serviço de autenticação";
       try {
         const errorData = JSON.parse(errorText);
         errorMessage = errorData.errors?.[0]?.message || errorData.message || errorMessage;
       } catch {
         if (errorText) {
-          errorMessage = errorText.length > 200 ? "Erro ao criar convite no Clerk" : errorText;
+          errorMessage = errorText.length > 200 ? "Erro ao criar convite no serviço de autenticação" : errorText;
         }
       }
       
@@ -106,6 +126,7 @@ export async function createUser(data: any) {
         status: response.status,
         statusText: response.statusText,
         error: errorMessage,
+        body: errorText,
       });
       
       throw new Error(errorMessage);
@@ -118,11 +139,11 @@ export async function createUser(data: any) {
       
       if (!invitation || !invitation.id) {
         console.error("Invalid invitation response:", invitation);
-        throw new Error("Resposta inválida do Clerk");
+        throw new Error("Resposta inválida do serviço de autenticação");
       }
     } catch (error: any) {
       console.error("Error parsing invitation response:", error);
-      throw new Error("Erro ao processar resposta do Clerk");
+      throw new Error("Erro ao processar resposta do serviço de autenticação");
     }
 
     try {
@@ -141,11 +162,13 @@ export async function createUser(data: any) {
       if (dbError.code === "P2002") {
         throw new Error("Já existe um usuário com este email");
       }
-      throw new Error("Erro ao salvar usuário no banco de dados");
+      throw new Error("Erro ao salvar usuário no banco de dados: " + (dbError.message || ""));
     }
 
     revalidatePath("/usuarios");
     revalidatePath("/usuarios/novo");
+    
+    console.log("User created successfully");
     return { success: true, error: null };
   } catch (error: any) {
     console.error("Error creating user - Full error:", {
