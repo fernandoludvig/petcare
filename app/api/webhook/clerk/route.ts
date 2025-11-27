@@ -69,15 +69,28 @@ export async function POST(req: Request) {
       });
 
       if (!organization) {
-        organization = await prisma.organization.create({
-          data: {
-            name: first_name && last_name
-              ? `${first_name} ${last_name}`
-              : email,
-            clerkId: id,
-            email,
-          },
-        });
+        try {
+          organization = await prisma.organization.create({
+            data: {
+              name: first_name && last_name
+                ? `${first_name} ${last_name}`
+                : email,
+              clerkId: id,
+              email,
+            },
+          });
+        } catch (createError: any) {
+          if (createError.code === "P2002") {
+            organization = await prisma.organization.findUnique({
+              where: { clerkId: id },
+            });
+            if (!organization) {
+              return new Response("Erro ao criar organização", { status: 500 });
+            }
+          } else {
+            throw createError;
+          }
+        }
       } else {
         organization = await prisma.organization.update({
           where: { id: organization.id },

@@ -43,26 +43,61 @@ export async function getCurrentOrganization() {
     });
 
     if (!organization) {
-      organization = await prisma.organization.create({
-        data: {
-          name: user.firstName && user.lastName 
-            ? `${user.firstName} ${user.lastName}` 
-            : user.emailAddresses[0]?.emailAddress || "Nova Organização",
-          clerkId: user.id,
-          email: user.emailAddresses[0]?.emailAddress || "",
-        },
+      organization = await prisma.organization.findUnique({
+        where: { clerkId: user.id },
       });
 
-      await prisma.user.create({
-        data: {
-          clerkId: userId,
-          email: user.emailAddresses[0]?.emailAddress || "",
-          name: user.firstName && user.lastName
-            ? `${user.firstName} ${user.lastName}`
-            : user.emailAddresses[0]?.emailAddress || "Usuário",
-          organizationId: organization.id,
-        },
+      if (!organization) {
+        try {
+          organization = await prisma.organization.create({
+            data: {
+              name: user.firstName && user.lastName 
+                ? `${user.firstName} ${user.lastName}` 
+                : user.emailAddresses[0]?.emailAddress || "Nova Organização",
+              clerkId: user.id,
+              email: user.emailAddresses[0]?.emailAddress || "",
+            },
+          });
+        } catch (createError: any) {
+          if (createError.code === "P2002") {
+            organization = await prisma.organization.findUnique({
+              where: { clerkId: user.id },
+            });
+            if (!organization) {
+              throw new Error("Erro ao criar organização. Tente novamente.");
+            }
+          } else {
+            throw createError;
+          }
+        }
+      }
+
+      const existingUser = await prisma.user.findUnique({
+        where: { clerkId: userId },
       });
+
+      if (!existingUser && organization) {
+        try {
+          await prisma.user.create({
+            data: {
+              clerkId: userId,
+              email: user.emailAddresses[0]?.emailAddress || "",
+              name: user.firstName && user.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : user.emailAddresses[0]?.emailAddress || "Usuário",
+              organizationId: organization.id,
+            },
+          });
+        } catch (userError: any) {
+          if (userError.code !== "P2002") {
+            console.error("Error creating user:", userError);
+          }
+        }
+      }
+    }
+
+    if (!organization) {
+      throw new Error("Organização não encontrada");
     }
 
     return organization;
