@@ -17,22 +17,19 @@ export default async function NewUserPage() {
 
     async function handleSubmit(data: any) {
       "use server";
-      try {
-        const result = await createUser(data);
-        
-        if (!result.success) {
-          throw new Error(result.error || "Erro ao criar usuário");
-        }
-        
-        redirect("/usuarios");
-      } catch (error: any) {
-        // Se for um erro de redirect, deixar passar
-        if (error.message?.includes("NEXT_REDIRECT") || error.digest === "NEXT_REDIRECT") {
-          throw error;
-        }
-        // Caso contrário, relançar o erro
-        throw error;
+      
+      console.log("handleSubmit called on server with data:", data);
+      
+      const result = await createUser(data);
+      
+      console.log("createUser result:", result);
+      
+      if (!result.success) {
+        console.error("Error from createUser:", result.error);
+        return { success: false, error: result.error };
       }
+      
+      redirect("/usuarios");
     }
 
     return (

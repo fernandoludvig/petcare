@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 
 interface UserFormProps {
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any) => Promise<any>;
   defaultValues?: {
     name?: string;
     email?: string;
@@ -47,17 +47,25 @@ export function UserForm({ onSubmit, defaultValues }: UserFormProps) {
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
     setError(null);
+    
     try {
       console.log("Form submitting with data:", data);
-      await onSubmit(data);
-      // Se chegou aqui, o redirect foi bem-sucedido
-      // Não resetar o estado pois o redirect vai acontecer
+      const result = await onSubmit(data);
+      
+      console.log("Form submission result:", result);
+      
+      if (result && result.success === false) {
+        const errorMessage = result.error || "Erro ao salvar usuário";
+        console.error("Error from server:", errorMessage);
+        setError(errorMessage);
+        setIsSubmitting(false);
+        return;
+      }
+      
     } catch (err: any) {
       console.error("Form submission error:", err);
       
-      // NEXT_REDIRECT é um erro esperado quando redirect() é chamado
       if (err.message?.includes("NEXT_REDIRECT") || err.digest === "NEXT_REDIRECT") {
-        // Redirect está funcionando, não fazer nada
         return;
       }
       
