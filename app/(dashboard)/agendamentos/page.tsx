@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { AppointmentsCalendarWrapper } from "@/components/appointments/appointments-calendar-wrapper";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
-import { getCurrentOrganization } from "@/lib/auth";
+import { getCurrentOrganization, getCurrentUser } from "@/lib/auth";
 import { startOfWeek, endOfWeek } from "date-fns";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -12,17 +12,24 @@ export const dynamic = 'force-dynamic';
 async function AppointmentsContent() {
   try {
     const organization = await getCurrentOrganization();
+    const currentUser = await getCurrentUser();
     const weekStart = startOfWeek(new Date());
     const weekEnd = endOfWeek(new Date());
 
-    const appointments = await prisma.appointment.findMany({
-      where: {
-        organizationId: organization.id,
-        startTime: { gte: weekStart, lte: weekEnd },
-        status: {
-          notIn: ["COMPLETED", "CANCELLED"],
-        },
+    const where: any = {
+      organizationId: organization.id,
+      startTime: { gte: weekStart, lte: weekEnd },
+      status: {
+        notIn: ["COMPLETED", "CANCELLED"],
       },
+    };
+
+    if (currentUser && currentUser.role !== "ADMIN") {
+      where.assignedToId = currentUser.id;
+    }
+
+    const appointments = await prisma.appointment.findMany({
+      where,
       include: {
         pet: { include: { client: true } },
         client: true,

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { prisma } from "@/lib/prisma";
-import { getCurrentOrganization } from "@/lib/auth";
+import { getCurrentOrganization, getCurrentUser } from "@/lib/auth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Link from "next/link";
@@ -38,6 +38,15 @@ export default async function PetDetailPage({
 }) {
   const { id } = await params;
   const organization = await getCurrentOrganization();
+  const currentUser = await getCurrentUser();
+
+  const appointmentWhere: any = {
+    petId: id,
+  };
+
+  if (currentUser && currentUser.role !== "ADMIN") {
+    appointmentWhere.assignedToId = currentUser.id;
+  }
 
   const pet = await prisma.pet.findFirst({
     where: {
@@ -47,6 +56,7 @@ export default async function PetDetailPage({
     include: {
       client: true,
       appointments: {
+        where: appointmentWhere,
         include: {
           service: true,
         },

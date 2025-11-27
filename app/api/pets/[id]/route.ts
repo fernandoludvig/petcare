@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentOrganization } from "@/lib/auth";
+import { getCurrentOrganization, getCurrentUser } from "@/lib/auth";
 import { petSchema } from "@/lib/validations/pet";
 
 export async function GET(
@@ -9,7 +9,16 @@ export async function GET(
 ) {
   try {
     const organization = await getCurrentOrganization();
+    const currentUser = await getCurrentUser();
     const { id } = await params;
+
+    const appointmentWhere: any = {
+      petId: id,
+    };
+
+    if (currentUser && currentUser.role !== "ADMIN") {
+      appointmentWhere.assignedToId = currentUser.id;
+    }
 
     const pet = await prisma.pet.findFirst({
       where: {
@@ -19,6 +28,7 @@ export async function GET(
       include: {
         client: true,
         appointments: {
+          where: appointmentWhere,
           include: {
             service: true,
           },

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentOrganization } from "@/lib/auth";
+import { getCurrentOrganization, getCurrentUser } from "@/lib/auth";
 import { appointmentSchema } from "@/lib/validations/appointment";
 
 export async function GET(request: NextRequest) {
   try {
     const organization = await getCurrentOrganization();
+    const currentUser = await getCurrentUser();
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
@@ -19,6 +20,10 @@ export async function GET(request: NextRequest) {
         gte: new Date(startDate),
         lte: new Date(endDate),
       };
+    }
+
+    if (currentUser && currentUser.role !== "ADMIN") {
+      where.assignedToId = currentUser.id;
     }
 
     const appointments = await prisma.appointment.findMany({

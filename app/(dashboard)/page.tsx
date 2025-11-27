@@ -43,13 +43,22 @@ type SerializedAppointment = Omit<AppointmentWithRelations, 'startTime' | 'endTi
 
 async function getDashboardData() {
   const organization = await getCurrentOrganization();
+  const currentUser = await getCurrentUser();
   const today = new Date();
   const todayStart = startOfDay(today);
   const todayEnd = endOfDay(today);
 
+  const appointmentWhere: any = {
+    organizationId: organization.id,
+  };
+
+  if (currentUser && currentUser.role !== "ADMIN") {
+    appointmentWhere.assignedToId = currentUser.id;
+  }
+
   const todayAppointments = await prisma.appointment.findMany({
     where: {
-      organizationId: organization.id,
+      ...appointmentWhere,
       startTime: {
         gte: todayStart,
         lte: todayEnd,
@@ -81,7 +90,7 @@ async function getDashboardData() {
 
   const upcomingAppointments = await prisma.appointment.findMany({
     where: {
-      organizationId: organization.id,
+      ...appointmentWhere,
       startTime: {
         gte: today,
         lte: nextTwoHours,
@@ -108,7 +117,7 @@ async function getDashboardData() {
 
   const pendingAppointments = await prisma.appointment.findMany({
     where: {
-      organizationId: organization.id,
+      ...appointmentWhere,
       status: "SCHEDULED",
       startTime: {
         gte: today,
@@ -140,7 +149,7 @@ async function getDashboardData() {
 
   const revenueData = await prisma.appointment.findMany({
     where: {
-      organizationId: organization.id,
+      ...appointmentWhere,
       startTime: {
         gte: startOfDay(subDays(today, 6)),
         lte: endOfDay(today),
@@ -166,7 +175,7 @@ async function getDashboardData() {
 
   const monthRevenue = await prisma.appointment.aggregate({
     where: {
-      organizationId: organization.id,
+      ...appointmentWhere,
       startTime: {
         gte: monthStart,
         lte: monthEnd,

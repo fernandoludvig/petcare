@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { prisma } from "@/lib/prisma";
-import { getCurrentOrganization } from "@/lib/auth";
+import { getCurrentOrganization, getCurrentUser } from "@/lib/auth";
 import { formatPhone } from "@/lib/utils";
 import { format as formatDate } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,6 +19,15 @@ export default async function ClientDetailPage({
 }) {
   const { id } = await params;
   const organization = await getCurrentOrganization();
+  const currentUser = await getCurrentUser();
+
+  const appointmentWhere: any = {
+    clientId: id,
+  };
+
+  if (currentUser && currentUser.role !== "ADMIN") {
+    appointmentWhere.assignedToId = currentUser.id;
+  }
 
   const client = await prisma.client.findFirst({
     where: {
@@ -28,6 +37,7 @@ export default async function ClientDetailPage({
     include: {
       pets: true,
       appointments: {
+        where: appointmentWhere,
         include: {
           pet: true,
           service: true,
@@ -44,10 +54,16 @@ export default async function ClientDetailPage({
     notFound();
   }
 
+  const appointmentCountWhere: any = {
+    clientId: client.id,
+  };
+
+  if (currentUser && currentUser.role !== "ADMIN") {
+    appointmentCountWhere.assignedToId = currentUser.id;
+  }
+
   const appointmentCount = await prisma.appointment.count({
-    where: {
-      clientId: client.id,
-    },
+    where: appointmentCountWhere,
   });
 
   return (
